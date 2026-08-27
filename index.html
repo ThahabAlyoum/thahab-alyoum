@@ -456,25 +456,44 @@
   loadLiveGoldPrice();
 
   // ==== عبّي سعر الاشتراك هنا وبينعبى بالموقع تلقائيًا ====
-  const SUBSCRIPTION_PRICE = "10 USDT / شهريًا"; // 🔧 غيّر السعر هنا فقط
-  document.getElementById('botPrice').textContent = SUBSCRIPTION_PRICE;
+  // ==== تحميل الروابط والسعر وتوصية اليوم من ملفات قابلة للتعديل عبر لوحة التحكم ====
+  async function loadSiteContent() {
+    let settings = {
+      referral: "#", whatsapp: "#", bot: "#", telegramChannel: "#",
+      facebook: "#", instagram: "#", subscriptionPrice: "—"
+    };
+    try {
+      const res = await fetch('/content/settings.json', { cache: 'no-store' });
+      settings = await res.json();
+    } catch (e) {
+      console.warn('تعذر تحميل ملف الإعدادات، تم استخدام قيم افتراضية.');
+    }
 
-  // ==== عبّي الروابط هنا مرة وحدة وبتنعبى بكل مكان بالموقع تلقائيًا ====
-  const LINKS = {
-    referral: "https://investingar.com/open-accounts/?ref=125051",   // ✅ رابط فتح حساب التداول (رابط الوكيل)
-    whatsapp: "https://whatsapp.com/channel/0029Vb8f4j372WTvpugzJb3T",   // ✅ رابط قناة واتساب
-    bot: "https://t.me/GoldTodayAnalysisBot",        // ✅ رابط بوت تحليل الشارت على تليجرام
-    telegramChannel: "https://t.me/GoldTodayAnalysisBot", // ✅ معبأ مؤقتًا بنفس رابط البوت
-    facebook: "#",   // 🔧 رابط صفحة فيسبوك
-    instagram: "#",  // 🔧 رابط صفحة انستغرام
-  };
+    document.querySelectorAll('[data-role="referral-link"]').forEach(el => el.href = settings.referral);
+    document.querySelectorAll('[data-role="whatsapp-link"]').forEach(el => el.href = settings.whatsapp);
+    document.querySelectorAll('[data-role="bot-link"]').forEach(el => el.href = settings.bot);
+    document.querySelectorAll('[data-role="telegram-channel-link"]').forEach(el => el.href = settings.telegramChannel);
+    document.querySelectorAll('[data-role="facebook-link"]').forEach(el => el.href = settings.facebook);
+    document.querySelectorAll('[data-role="instagram-link"]').forEach(el => el.href = settings.instagram);
+    const priceEl = document.getElementById('botPrice');
+    if (priceEl) priceEl.textContent = settings.subscriptionPrice;
 
-  document.querySelectorAll('[data-role="referral-link"]').forEach(el => el.href = LINKS.referral);
-  document.querySelectorAll('[data-role="whatsapp-link"]').forEach(el => el.href = LINKS.whatsapp);
-  document.querySelectorAll('[data-role="bot-link"]').forEach(el => el.href = LINKS.bot);
-  document.querySelectorAll('[data-role="telegram-channel-link"]').forEach(el => el.href = LINKS.telegramChannel);
-  document.querySelectorAll('[data-role="facebook-link"]').forEach(el => el.href = LINKS.facebook);
-  document.querySelectorAll('[data-role="instagram-link"]').forEach(el => el.href = LINKS.instagram);
+    try {
+      const recRes = await fetch('/content/recommendation.json', { cache: 'no-store' });
+      const rec = await recRes.json();
+      const rows = document.querySelectorAll('.rec-rows .item .val');
+      if (rows[0]) rows[0].innerHTML = `<span class="badge buy">${rec.direction}</span>`;
+      if (rows[1]) rows[1].textContent = rec.support;
+      if (rows[2]) rows[2].textContent = rec.resistance;
+      if (rows[3]) rows[3].textContent = rec.range;
+      const noteEl = document.querySelector('.rec-note');
+      if (noteEl) noteEl.textContent = rec.note;
+    } catch (e) {
+      console.warn('تعذر تحميل توصية اليوم.');
+    }
+  }
+  loadSiteContent();
+
 </script>
 
 </body>
